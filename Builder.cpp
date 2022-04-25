@@ -229,7 +229,6 @@ int main() {
       cout << endl;
       Builder.output_flag = false;
     }
-      
-      
+    
     return 0;
 }     
