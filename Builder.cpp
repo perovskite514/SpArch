@@ -119,9 +119,6 @@ public:
 class Builder
 {
 private:
-    bool fetch_flag = true; 
-    int fetch_size = 0;
-    int fetched_num = 0;
     int cnt = 0;
 public:
     // output variable

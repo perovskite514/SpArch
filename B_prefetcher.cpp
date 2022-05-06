@@ -20,7 +20,8 @@ using Graph = vector<vector<int>>;
 
 class A_fetcher
 {
-private: 
+private:
+    bool fetch_flag = true; 
     int fetch_size = 0;
     int fetched_num = 0;
     int cnt = 0;
@@ -33,7 +34,6 @@ public:
     vector<vector<tuple<int, int, double>>> A_fetch;
     tuple<int, int, double> output;
     bool output_flag = false;
-    bool fetch_flag = true;
     int row_inx = 0;
 
     A_fetcher(int n) {
@@ -121,12 +121,14 @@ public:
 class Builder
 {
 private:
+    bool fetch_flag = true; 
+    int fetch_size = 0;
+    int fetched_num = 0;
     int cnt = 0;
 public:
     // output variable
     tuple<int, int, int, double> A_element; //<false w, h, true w, val>
     bool output_flag = false;
-    bool last_flag;
     //int row_inx = 0;
 
     // FIFO
@@ -144,15 +146,10 @@ public:
         A_table.resize(n, vector<int>(0));
         A_inx.resize(n, 0);
         distance_table.resize(n, 1e9);
-        last_flag = false;
     }
 
-    void clock(bool &input_flag, bool &fetch_flag, tuple<int, int, double> input, int row_inx) {
+    void clock(bool &input_flag, tuple<int, int, double> input, int row_inx) {
 
-        if(fetch_flag == false && input_flag == false){
-            // last
-            last_flag = true;
-        }
         if(input_flag == true){
             // FIFO process
             FIFO.push(input);
@@ -199,6 +196,7 @@ public:
 class B_prefetcher
 {
 private:
+    int cnt = 0;
     int hbm_clock = 0;
     int buffer_size = 0;
 public:
@@ -208,7 +206,6 @@ public:
     // B
     vector<vector<pair<int, double>>> B;
     vector<pair<int, double>> B_output;
-    bool output_flag;
 
     B_prefetcher(int n) {
         init(n);
@@ -216,7 +213,6 @@ public:
 
     void init(int n) { // generate length 2 * n Buffer, length n B as CSR
 
-        output_flag = false;
         // generate B
         B.resize(n, vector<pair<int, double>>(0));
         Buffer.resize(0);
@@ -239,9 +235,9 @@ public:
 
     }
 
-    void clock(int inx, bool &inx_flag, vector<int> distance_table) {
+    void clock(int inx, bool &input_flag, vector<int> distance_table) {
 
-        if(inx_flag == false) return;
+        if(input_flag == false) return;
 
         int calcnt = 0;
         for(int i = 0; i < buffer_size; i++){
@@ -250,8 +246,7 @@ public:
         if(calcnt == B[inx].size()){
             // exists B's cal in buffer
             B_output = B[inx];
-            output_flag = true;
-            inx_flag = false;
+            input_flag = false;
             return;
         }
 
@@ -296,19 +291,12 @@ public:
             }
 
             B_output = B[inx];
-            output_flag = true;
-            inx_flag = false;
+            input_flag = false;
         }
 
         return;
     }
-
-    // B_prefetcherとOuter_productとの間はOuter_product側のflagで管理
 };
-
-
-
-
 
 
 
@@ -318,7 +306,7 @@ int main() {
     Builder Builder(10);
   	rep(i, 100){
       A_fetcher.clock();
-      Builder.clock(A_fetcher.output_flag, A_fetcher.fetch_flag, A_fetcher.output, A_fetcher.row_inx);
+      Builder.clock(A_fetcher.output_flag, A_fetcher.output, A_fetcher.row_inx);
       auto v = Builder.A_element;
       //cout << get<0>(v) << " " << get<1>(v) << " " << get<2>(v) << " " << get<3>(v) << endl;
       
@@ -342,7 +330,7 @@ int main() {
   
   	rep(i, 100){
       A_fetcher.clock();
-      Builder.clock(A_fetcher.output_flag, A_fetcher.fetch_flag, A_fetcher.output, A_fetcher.row_inx);
+      Builder.clock(A_fetcher.output_flag, A_fetcher.output, A_fetcher.row_inx);
       auto v = Builder.A_element;
       cout << Builder.FIFO.size() << " " << get<0>(v) << " " << get<1>(v) << " " << get<2>(v) << " " << get<3>(v) << endl;
       
